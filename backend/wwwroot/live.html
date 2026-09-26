@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Live Face Stream</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #222; color: #fff; }
+    .container { width: 960px; margin: 20px auto; }
+    img { width: 100%; height: auto; border: 2px solid #444; }
+    .controls { margin-top: 10px; }
+    .status { margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Live Face Stream</h2>
+    <div style="position:relative;">
+      <img id="stream" src="/api/live/stream" alt="live" style="display:block; width:100%;" />
+      <canvas id="overlay" style="position:absolute; left:0; top:0; pointer-events:none; width:100%; height:100%;"></canvas>
+    </div>
+    <div class="controls">
+      <form id="startForm">
+        RTSP URL: <input type="text" id="rtsp" size="60" placeholder="rtsp://user:pass@host:554/.." />
+        <button type="submit">Start</button>
+        <button id="stopBtn" type="button">Stop</button>
+      </form>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@7.0.7/dist/browser/signalr.min.js"></script>
+  <script>
+    const form = document.getElementById('startForm');
+    const rtsp = document.getElementById('rtsp');
+    const status = document.getElementById('status');
+    const stopBtn = document.getElementById('stopBtn');
+    const overlay = document.getElementById('overlay');
+    const img = document.getElementById('stream');
+    const ctx = overlay.getContext('2d');
+
+    // Resize canvas to image size
+    function resizeCanvas() {
+      overlay.width = img.clientWidth;
+      overlay.height = img.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    img.addEventListener('load', resizeCanvas);
+
+    // SignalR connection
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl('/recognitionHub')
+      .withAutomaticReconnect()
+      .build();
+
+    connection.on('Recognition', (ev) => {
+      // ev: { Timestamp, Source, UserId, Name, Confidence, EventId, X, Y, Width, Height }
+      // Clear and draw
+      ctx.clearRect(0,0,overlay.width, overlay.height);
+      if (!ev) return;
+      // scale coords proportionally (assume incoming coords are frame pixels)
+      const scaleX = overlay.width / img.naturalWidth || 1;
+      const scaleY = overlay.height / img.naturalHeight || 1;
+      ctx.lineWidth = 3;
+      ctx.font = '16px Arial';
+      const x = ev.X * scaleX;
+      const y = ev.Y * scaleY;
+      const w = ev.Width * scaleX;
+      const h = ev.Height * scaleY;
+      ctx.strokeStyle = 'lime';
+      ctx.strokeRect(x, y, w, h);
+      const label = `${ev.Source} ${ev.Name || ev.UserId || 'UNKNOWN'} (${ev.Confidence || 0})`;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(x, Math.max(0,y-22), ctx.measureText(label).width + 8, 22);
+      ctx.fillStyle = 'white';
+      ctx.fillText(label, x+4, Math.max(12, y-6));
+    });
+
+    connection.start().catch(err => console.error('SignalR start fail', err));
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const url = rtsp.value.trim();
+      if (!url) { status.innerText = 'RTSP URL required'; return; }
+      status.innerText = 'Starting...';
+      const fd = new FormData();
+      fd.append('rtspUrl', url);
+      const res = await fetch('/api/live/start', { method: 'POST', body: fd });
+      const json = await res.json();
+      status.innerText = JSON.stringify(json);
+    });
+
+    stopBtn.addEventListener('click', async () => {
+      const res = await fetch('/api/live/stop', { method: 'POST' });
+      const json = await res.json();
+      status.innerText = JSON.stringify(json);
+    });
+  </script>
+</body>
+</html>

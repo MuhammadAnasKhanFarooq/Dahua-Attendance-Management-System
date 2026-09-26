@@ -1,0 +1,117 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Prevent apphost.exe / exe output locking during development runs by disabling apphost
+       and writing build artifacts to an alternate output folder for Debug builds. This
+       avoids the common "file is being used by another process" error when the app
+       is left running while rebuilding. -->
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <!-- Disable native apphost to avoid extra locking by apphost.exe during development runs. -->
+    <UseAppHost>false</UseAppHost>
+    <!-- Use the normal framework-specific output folder (no nested 'build' folder) so Visual Studio
+         and the debugger operate on the expected output path. The previous nested 'build' folder
+         caused MSBuild to copy into bin\Debug\net10.0\build\net10.0 which led to confusing locks.
+         Keeping UseAppHost=false preserves the original intent (avoid apphost lock) while restoring
+         standard OutputPath behavior. -->
+    <OutputPath>bin\Debug\net10.0\</OutputPath>
+  </PropertyGroup>
+
+  <!-- Ensure Data files (haarcascade) are copied to output/publish -->
+  <ItemGroup>
+    <None Include="Data\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Exclude generated build output from the compile item set to avoid duplicate
+       top-level Program.cs / controller sources being compiled from bin/obj copies. -->
+  <ItemGroup>
+    <!-- Exclude any generated C# files under any bin/ or obj/ folder in the repository
+         (including those inside subfolders like temp_client/obj/...). Using a recursive
+         glob ensures obj and bin copies from nested folders are not compiled and do
+         not introduce duplicate assembly attributes. -->
+    <Compile Remove="**\bin\**\*.cs" />
+    <Compile Remove="**\obj\**\*.cs" />
+    <!-- Exclude tools and other helper projects placed under the repo root from being
+         compiled as part of the main web project. These live in tools/ and are separate
+         .NET projects. Compiling their .cs files inside this project causes duplicate
+         Program types and missing-reference errors. -->
+    <Compile Remove="tools\**\*.cs" />
+  </ItemGroup>
+
+  <!-- ========================================================= -->
+  <!-- NuGet Packages                                            -->
+  <!-- ========================================================= -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10"> 
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+    <PackageReference Include="OpenCvSharp4.Windows" Version="4.8.0.202" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.8.0.202" />
+  </ItemGroup>
+
+  <!-- ========================================================= -->
+  <!-- Dahua SDK DLLs                                            -->
+  <!-- Source: SDK\Bin                                           -->
+  <!-- ========================================================= -->
+
+  <ItemGroup>
+
+    <None Include="SDK\Bin\avnetsdk.dll" Link="SDK\avnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\dhconfigsdk.dll" Link="SDK\dhconfigsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\dhnetsdk.dll" Link="SDK\dhnetsdk.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\Infra.dll" Link="SDK\Infra.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\IvsDrawer.dll" Link="SDK\IvsDrawer.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\libeay32.dll" Link="SDK\libeay32.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\play.dll" Link="SDK\play.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\RenderEngine.dll" Link="SDK\RenderEngine.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\ssleay32.dll" Link="SDK\ssleay32.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="SDK\Bin\StreamConvertor.dll" Link="SDK\StreamConvertor.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Include="tools\RoslynDiag\RoslynDiag.csproj" />
+
+  </ItemGroup>
+
+</Project>
