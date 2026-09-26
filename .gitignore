@@ -1,0 +1,28 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.vscode/
+
+# Backend build files
+backend/bin/
+backend/obj/
+backend/.vs/
+backend/.idea/
+backend/.vscode/
+
+# Vendor SDK
+backend/SDK/
+
+# Sensitive/local data
+backend/wwwroot/enrolled/*
+!backend/wwwroot/enrolled/.gitkeep
+
+# Environment files
+.env
+.env.*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
